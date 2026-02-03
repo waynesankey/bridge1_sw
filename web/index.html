@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SE PRE1 Bridge</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div>
+          <h1>SE PRE1</h1>
+          <p class="subtitle">UART ↔ Wi‑Fi Bridge</p>
+        </div>
+        <div class="status" id="status">Disconnected</div>
+      </header>
+
+      <section class="panel">
+        <div class="row">
+          <label class="label" for="volume">Volume</label>
+          <input id="volume" type="range" min="0" max="64" step="1" />
+          <div class="value" id="volumeValue">0</div>
+        </div>
+
+        <div class="row">
+          <label class="label" for="balance">Balance</label>
+          <input id="balance" type="range" min="-6" max="6" step="1" />
+          <div class="value" id="balanceValue">0</div>
+        </div>
+
+        <div class="row">
+          <label class="label" for="brightness">Brightness</label>
+          <input id="brightness" type="range" min="1" max="8" step="1" />
+          <div class="value" id="brightnessValue">1</div>
+        </div>
+
+        <div class="row row-inline">
+          <label class="label" for="inputSelect">Input</label>
+          <select id="inputSelect"></select>
+        </div>
+
+        <div class="row row-inline">
+          <label class="label" for="mute">Mute</label>
+          <button id="mute" class="toggle">Off</button>
+        </div>
+
+        <div class="row row-inline">
+          <label class="label">Actions</label>
+          <button id="refresh" class="ghost">Refresh</button>
+        </div>
+      </section>
+
+      <section class="panel log">
+        <div class="log-title">Live State</div>
+        <pre id="stateLine">STATE VOL=0 BAL=0 INP=1 MUTE=0 BRI=1</pre>
+      </section>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
