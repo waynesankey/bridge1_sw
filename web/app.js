@@ -6,10 +6,9 @@ const balanceEl = document.getElementById("balance");
 const balanceValueEl = document.getElementById("balanceValue");
 const brightnessEl = document.getElementById("brightness");
 const brightnessValueEl = document.getElementById("brightnessValue");
-const inputSelectEl = document.getElementById("inputSelect");
+const inputGroupEl = document.getElementById("inputGroup");
 const muteEl = document.getElementById("mute");
 const refreshEl = document.getElementById("refresh");
-const stateLineEl = document.getElementById("stateLine");
 
 let ws = null;
 let reconnectTimer = null;
@@ -78,33 +77,40 @@ async function pollState() {
   }
 }
 
+function setActiveInput(value) {
+  const buttons = inputGroupEl.querySelectorAll("button[data-input]");
+  buttons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.input === String(value));
+  });
+}
+
 function updateInputOptions() {
-  const current = Number(inputSelectEl.value || 1);
-  inputSelectEl.innerHTML = "";
+  const current = inputGroupEl.dataset.current || "1";
+  inputGroupEl.innerHTML = "";
 
   const keys = Object.keys(labels);
-  if (keys.length === 0) {
-    for (let i = 1; i <= 4; i += 1) {
-      const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = `Input ${i}`;
-      inputSelectEl.appendChild(opt);
-    }
-  } else {
-    keys.sort((a, b) => Number(a) - Number(b));
-    for (const key of keys) {
-      const opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = labels[key] || `Input ${key}`;
-      inputSelectEl.appendChild(opt);
-    }
-  }
+  const inputs = keys.length
+    ? keys.sort((a, b) => Number(a) - Number(b))
+    : ["1", "2", "3", "4"];
 
-  inputSelectEl.value = String(current);
+  inputs.forEach((key) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "input-btn";
+    btn.dataset.input = key;
+    btn.textContent = labels[key] || `Input ${key}`;
+    btn.addEventListener("click", () => {
+      setActiveInput(key);
+      sendLine(`SET INP ${key}`);
+    });
+    inputGroupEl.appendChild(btn);
+  });
+
+  inputGroupEl.dataset.current = String(current);
+  setActiveInput(current);
 }
 
 function handleStateLine(line) {
-  stateLineEl.textContent = line;
   const parts = line.split(/\s+/);
   const state = {};
   for (let i = 1; i < parts.length; i += 1) {
@@ -127,7 +133,8 @@ function handleStateLine(line) {
     brightnessValueEl.textContent = state.BRI;
   }
   if (state.INP !== undefined) {
-    inputSelectEl.value = state.INP;
+    inputGroupEl.dataset.current = String(state.INP);
+    setActiveInput(state.INP);
   }
   if (state.MUTE !== undefined) {
     const isMuted = Number(state.MUTE) === 1;
@@ -224,11 +231,6 @@ brightnessEl.addEventListener("input", (event) => {
   const value = event.target.value;
   brightnessValueEl.textContent = value;
   scheduleSend("bri", `SET BRI ${value}`, 150);
-});
-
-inputSelectEl.addEventListener("change", (event) => {
-  const value = event.target.value;
-  sendLine(`SET INP ${value}`);
 });
 
 muteEl.addEventListener("click", () => {

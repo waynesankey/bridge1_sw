@@ -817,9 +817,15 @@ async def mdns_task(ip, hostname):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 255)
-            mreq = socket.inet_aton(MDNS_ADDR) + socket.inet_aton("0.0.0.0")
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+            ip_ttl = getattr(socket, "IP_MULTICAST_TTL", None)
+            ip_add = getattr(socket, "IP_ADD_MEMBERSHIP", None)
+            if ip_ttl is not None:
+                sock.setsockopt(socket.IPPROTO_IP, ip_ttl, 255)
+            if ip_add is not None:
+                inet_aton = getattr(socket, "inet_aton", None)
+                if inet_aton is not None:
+                    mreq = inet_aton(MDNS_ADDR) + inet_aton("0.0.0.0")
+                    sock.setsockopt(socket.IPPROTO_IP, ip_add, mreq)
         except Exception:
             pass
         sock.bind(("0.0.0.0", MDNS_PORT))

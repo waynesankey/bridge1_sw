@@ -188,8 +188,28 @@ button {
   font-weight: 600;
 }
 
-select {
-  font-size: 1.25rem;
+.input-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.input-btn {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #fffaf2;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 1.05rem;
+  box-shadow: 0 6px 14px rgba(35, 27, 20, 0.08);
+}
+
+.input-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 8px 18px rgba(15, 123, 108, 0.3);
 }
 
 #mute {
@@ -222,25 +242,6 @@ button.ghost {
   border: 1px dashed var(--accent);
 }
 
-.log {
-  padding: 16px 18px;
-}
-
-.log-title {
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-pre {
-  margin: 0;
-  padding: 12px;
-  border-radius: 12px;
-  background: #fbf7ef;
-  color: #5d4b3f;
-  border: 1px solid var(--border);
-  font-size: 0.92rem;
-  overflow-x: auto;
-}
 
 @keyframes floatIn {
   from {
