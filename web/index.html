@@ -4,16 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SE PRE1 Bridge</title>
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/style.css?v=20260204a" />
   </head>
   <body>
     <div class="app">
       <header class="top">
         <div>
-          <h1>SE PRE1</h1>
-          <p class="subtitle">UART ↔ Wi‑Fi Bridge</p>
+          <h1>Ward's Preamp</h1>
+          <!-- subtitle removed -->
         </div>
-        <div class="status" id="status">Disconnected</div>
+        <div class="status-wrap">
+          <span class="status-dot" id="statusDot"></span>
+          <div class="status" id="status">Disconnected</div>
+        </div>
       </header>
 
       <section class="panel">
@@ -57,6 +60,6 @@
       </section>
     </div>
 
-    <script src="/app.js"></script>
+    <script src="/app.js?v=20260204a"></script>
   </body>
 </html>

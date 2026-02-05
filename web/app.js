@@ -1,4 +1,5 @@
 const statusEl = document.getElementById("status");
+const statusDotEl = document.getElementById("statusDot");
 const volumeEl = document.getElementById("volume");
 const volumeValueEl = document.getElementById("volumeValue");
 const balanceEl = document.getElementById("balance");
@@ -14,10 +15,14 @@ let ws = null;
 let reconnectTimer = null;
 let pendingSend = {};
 let labels = {};
+let pollTimer = null;
 
 function setStatus(text, ok) {
   statusEl.textContent = text;
   statusEl.classList.toggle("ok", !!ok);
+  if (statusDotEl) {
+    statusDotEl.classList.toggle("ok", !!ok);
+  }
 }
 
 function scheduleSend(key, line, delayMs) {
@@ -32,9 +37,45 @@ function scheduleSend(key, line, delayMs) {
 
 function sendLine(line) {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
+    postCommand(line);
     return;
   }
   ws.send(line);
+}
+
+async function postCommand(line) {
+  try {
+    const res = await fetch("/api/cmd", {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: line,
+    });
+    if (res.ok) {
+      // In HTTP fallback mode, pull fresh state after command ACK/STATE settles.
+      setTimeout(pollState, 180);
+    }
+  } catch (err) {
+    // keep UI responsive; status already reflects disconnect
+  }
+}
+
+async function pollState() {
+  try {
+    const [stateRes, labelsRes] = await Promise.all([
+      fetch("/api/state"),
+      fetch("/api/labels"),
+    ]);
+    const stateLine = (await stateRes.text()).trim();
+    const labelsLine = (await labelsRes.text()).trim();
+    if (stateLine.startsWith("STATE ")) {
+      handleStateLine(stateLine);
+    }
+    if (labelsLine.startsWith("SELECTOR_LABELS")) {
+      handleLabelsLine(labelsLine);
+    }
+  } catch (err) {
+    // best-effort polling fallback
+  }
 }
 
 function updateInputOptions() {
@@ -89,7 +130,7 @@ function handleStateLine(line) {
     inputSelectEl.value = state.INP;
   }
   if (state.MUTE !== undefined) {
-    const isMuted = String(state.MUTE) === "1";
+    const isMuted = Number(state.MUTE) === 1;
     muteEl.textContent = isMuted ? "On" : "Off";
     muteEl.classList.toggle("on", isMuted);
   }
@@ -107,11 +148,18 @@ function handleLabelsLine(line) {
 }
 
 function connectWebSocket() {
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
   const wsUrl = `ws://${window.location.host}/ws`;
   ws = new WebSocket(wsUrl);
 
   ws.addEventListener("open", () => {
     setStatus("Connected", true);
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
     sendLine("GET STATE");
     sendLine("GET SELECTOR_LABELS");
   });
@@ -128,6 +176,9 @@ function connectWebSocket() {
 
   ws.addEventListener("close", () => {
     setStatus("Disconnected", false);
+    if (!pollTimer) {
+      pollTimer = setInterval(pollState, 1000);
+    }
     if (!reconnectTimer) {
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
@@ -139,6 +190,22 @@ function connectWebSocket() {
   ws.addEventListener("error", () => {
     setStatus("Error", false);
   });
+}
+
+function forceReconnectWebSocket() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  try {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
+  } catch (err) {
+    // ignore close errors
+  }
+  ws = null;
+  connectWebSocket();
 }
 
 volumeEl.addEventListener("input", (event) => {
@@ -177,3 +244,21 @@ refreshEl.addEventListener("click", () => {
 
 updateInputOptions();
 connectWebSocket();
+pollState();
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    forceReconnectWebSocket();
+    pollState();
+  }
+});
+
+window.addEventListener("focus", () => {
+  forceReconnectWebSocket();
+  pollState();
+});
+
+window.addEventListener("pageshow", () => {
+  forceReconnectWebSocket();
+  pollState();
+});

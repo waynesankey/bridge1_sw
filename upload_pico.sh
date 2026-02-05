@@ -2,6 +2,8 @@
 set -euo pipefail
 
 PORT="${PORT:-}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PICO_DIR="$ROOT_DIR/pico"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 not found in PATH" >&2
@@ -44,26 +46,29 @@ def rm(path):
         except OSError:
             pass
 
-for p in ("main.py", "config.py", "selector.json", "amp_state.json", "lib", "modules"):
+for p in ("main.py", "config.py", "web"):
     rm(p)
 PY
 )
+
+# Ensure pico/ staging folder is up to date before upload.
+"$ROOT_DIR/sync_pico.sh"
 
 MPREMOTE_ARGS=(
   connect "$PORT"
   exec "$CLEAN_PY"
   +
-  fs cp main.py :
+  fs cp "$PICO_DIR/main.py" :
   +
-  fs cp config.py :
+  fs cp "$PICO_DIR/config.py" :
   +
-  fs cp selector.json :
+  fs mkdir web
   +
-  fs cp amp_state.json :
+  fs cp "$PICO_DIR/web/index.html" :web/index.html
   +
-  fs cp -r lib :
+  fs cp "$PICO_DIR/web/app.js" :web/app.js
   +
-  fs cp -r modules :
+  fs cp "$PICO_DIR/web/style.css" :web/style.css
   +
   reset
 )

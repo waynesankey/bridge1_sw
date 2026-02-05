@@ -12,7 +12,7 @@ WIFI_AP_SSID = "preamp-bridge"
 WIFI_AP_PASSWORD = "preamp123"
 
 # Optional hostname (may not be supported on all builds)
-WIFI_HOSTNAME = "preamp-bridge"
+WIFI_HOSTNAME = "preamp"
 
 # Wi-Fi onboarding
 WIFI_CONFIG_FILE = "wifi.json"
