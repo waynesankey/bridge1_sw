@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SE PRE1 Bridge</title>
-    <link rel="stylesheet" href="/style.css?v=20260214n" />
+    <link rel="stylesheet" href="/style.css?v=20260214y" />
   </head>
   <body>
     <div class="app">
       <header class="top">
         <div>
-          <h1>Ward's Preamp</h1>
+          <h1>The Monster</h1>
           <!-- subtitle removed -->
         </div>
         <div class="status-wrap">
@@ -26,6 +26,16 @@
           <div class="value" id="volumeValue">0</div>
         </div>
 
+        <div class="row row-inline">
+          <label class="label">Input</label>
+          <div class="input-group" id="inputGroup"></div>
+        </div>
+
+        <div class="row row-inline">
+          <label class="label" for="mute">Mute</label>
+          <button id="mute" class="toggle">Off</button>
+        </div>
+
         <div class="row">
           <label class="label" for="balance">Balance</label>
           <input id="balance" type="range" min="-6" max="6" step="1" />
@@ -39,16 +49,6 @@
         </div>
 
         <div class="row row-inline">
-          <label class="label">Input</label>
-          <div class="input-group" id="inputGroup"></div>
-        </div>
-
-        <div class="row row-inline">
-          <label class="label" for="mute">Mute</label>
-          <button id="mute" class="toggle">Off</button>
-        </div>
-
-        <div class="row row-inline">
           <label class="label">Actions</label>
           <button id="refresh" class="ghost">Refresh</button>
         </div>
@@ -56,6 +56,6 @@
 
     </div>
 
-    <script src="/app.js?v=20260214n"></script>
+    <script src="/app.js?v=20260214y"></script>
   </body>
 </html>
