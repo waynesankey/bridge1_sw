@@ -57,8 +57,6 @@ GET_DEDUP_MS = 350
 GET_DEDUP_COMMANDS = (
     "GET STATE",
     "GET SELECTOR_LABELS",
-    "GET AMP_STATES",
-    "GET TUBES",
 )
 
 
@@ -775,8 +773,6 @@ async def uart_startup_sync(uart):
     await asyncio.sleep_ms(UART_STARTUP_SYNC_DELAY_MS)
     uart_send(uart, "GET STATE")
     uart_send(uart, "GET SELECTOR_LABELS")
-    uart_send(uart, "GET AMP_STATES")
-    uart_send(uart, "GET TUBES")
 
 
 async def ws_session(ws, uart):
