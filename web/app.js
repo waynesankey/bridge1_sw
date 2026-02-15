@@ -9,6 +9,8 @@ const brightnessValueEl = document.getElementById("brightnessValue");
 const inputGroupEl = document.getElementById("inputGroup");
 const muteEl = document.getElementById("mute");
 const refreshEl = document.getElementById("refresh");
+const themeToggleEl = document.getElementById("themeToggle");
+const themeToggleTextEl = document.getElementById("themeToggleText");
 
 let ws = null;
 let reconnectTimer = null;
@@ -42,6 +44,11 @@ const WS_RECONNECT_DELAY_MS = 700;
 const WS_FALLBACK_GRACE_MS = 2200;
 const RECONNECT_KICK_MIN_INTERVAL_MS = 2000;
 
+const THEME_STORAGE_KEY = "bridge_theme_mode";
+const THEME_CYCLE = ["auto", "light", "dark"];
+const systemDarkMedia = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+let themeMode = "auto";
+
 function isPageVisible() {
   return !document.hidden && document.visibilityState === "visible";
 }
@@ -51,6 +58,89 @@ function setStatus(text, ok) {
   statusEl.classList.toggle("ok", !!ok);
   if (statusDotEl) {
     statusDotEl.classList.toggle("ok", !!ok);
+  }
+}
+
+function normalizeThemeMode(mode) {
+  return THEME_CYCLE.includes(mode) ? mode : "auto";
+}
+
+function getEffectiveTheme(mode) {
+  if (mode === "auto") {
+    return systemDarkMedia && systemDarkMedia.matches ? "dark" : "light";
+  }
+  return mode;
+}
+
+function updateThemeToggleText() {
+  if (!themeToggleEl) {
+    return;
+  }
+  let label = "Auto";
+  if (themeMode === "dark") {
+    label = "Dark";
+  } else if (themeMode === "light") {
+    label = "Light";
+  }
+  themeToggleEl.dataset.mode = themeMode;
+  if (themeToggleTextEl) {
+    themeToggleTextEl.textContent = label;
+  } else {
+    themeToggleEl.textContent = label;
+  }
+  themeToggleEl.setAttribute("aria-label", "Theme: " + label);
+}
+
+function setThemeMode(mode, persist = true) {
+  themeMode = normalizeThemeMode(mode);
+  const effectiveTheme = getEffectiveTheme(themeMode);
+  document.documentElement.setAttribute("data-theme", effectiveTheme);
+  updateThemeToggleText();
+  if (!persist) {
+    return;
+  }
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  } catch (err) {
+  }
+}
+
+function cycleThemeMode() {
+  const idx = THEME_CYCLE.indexOf(themeMode);
+  const nextMode = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
+  setThemeMode(nextMode, true);
+}
+
+function initTheme() {
+  let storedMode = "auto";
+  try {
+    const raw = localStorage.getItem(THEME_STORAGE_KEY);
+    if (raw) {
+      storedMode = raw;
+    }
+  } catch (err) {
+  }
+
+  setThemeMode(storedMode, false);
+
+  if (themeToggleEl) {
+    themeToggleEl.addEventListener("click", cycleThemeMode);
+  }
+
+  if (!systemDarkMedia) {
+    return;
+  }
+
+  const onSystemThemeChange = () => {
+    if (themeMode === "auto") {
+      setThemeMode("auto", false);
+    }
+  };
+
+  if (typeof systemDarkMedia.addEventListener === "function") {
+    systemDarkMedia.addEventListener("change", onSystemThemeChange);
+  } else if (typeof systemDarkMedia.addListener === "function") {
+    systemDarkMedia.addListener(onSystemThemeChange);
   }
 }
 
@@ -511,6 +601,7 @@ refreshEl.addEventListener("click", () => {
   requestFullSync(0);
 });
 
+initTheme();
 updateInputOptions();
 connectWebSocket();
 startupPollTimer = setTimeout(() => {

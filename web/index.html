@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SE PRE1 Bridge</title>
-    <link rel="stylesheet" href="/style.css?v=20260214y" />
+    <link rel="stylesheet" href="/style.css?v=20260214aa" />
   </head>
   <body>
     <div class="app">
@@ -13,9 +13,14 @@
           <h1>The Monster</h1>
           <!-- subtitle removed -->
         </div>
-        <div class="status-wrap">
-          <span class="status-dot" id="statusDot"></span>
-          <div class="status" id="status">Disconnected</div>
+        <div class="top-controls">
+          <div class="status-wrap">
+            <span class="status-dot" id="statusDot"></span>
+            <div class="status" id="status">Disconnected</div>
+          </div>
+          <button id="themeToggle" class="theme-toggle" type="button" aria-label="Theme: Auto">
+            <span class="theme-icon" aria-hidden="true"></span><span id="themeToggleText">Auto</span>
+          </button>
         </div>
       </header>
 
@@ -56,6 +61,6 @@
 
     </div>
 
-    <script src="/app.js?v=20260214y"></script>
+    <script src="/app.js?v=20260214aa"></script>
   </body>
 </html>
