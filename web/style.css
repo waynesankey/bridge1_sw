@@ -1,52 +1,61 @@
 :root {
   color-scheme: light;
-  --bg: #d5e1f2;
-  --panel: #c2d3ea;
-  --ink: #1a1917;
-  --accent: #0f7b6c;
-  --accent-2: #c45c2b;
-  --muted: #7b6f66;
-  --border: rgba(83, 73, 64, 0.18);
-  --shadow: 0 18px 40px rgba(40, 31, 22, 0.12);
-  --row-border: rgba(224, 214, 201, 0.6);
-  --value-color: #01257d;
+  --bg: #e7eef6;
+  --panel: #fdfefe;
+  --ink: #2b5f87;
+  --accent: #18b8ef;
+  --accent-2: #1d79e4;
+  --muted: #6886a4;
+  --border: #bbd4eb;
+  --shadow: 0 14px 30px rgba(44, 88, 130, 0.14);
+  --row-border: #e1edf8;
+  --value-color: #2f638f;
 
-  --status-wrap-bg: rgba(255, 255, 255, 0.7);
+  --status-wrap-bg: #edf6ff;
   --status-wrap-border: var(--border);
-  --status-off-dot: #d6a989;
-  --status-off-ring: rgba(214, 169, 137, 0.2);
-  --status-off-bg: rgba(214, 169, 137, 0.12);
-  --status-off-text: #8c5a3b;
-  --status-on-dot: #4a8bdf;
-  --status-on-ring: rgba(74, 139, 223, 0.25);
-  --status-on-bg: rgba(74, 139, 223, 0.16);
-  --status-on-text: #2558ae;
+  --status-off-dot: #9db6cc;
+  --status-off-ring: rgba(157, 182, 204, 0.2);
+  --status-off-bg: rgba(157, 182, 204, 0.14);
+  --status-off-text: #6685a0;
+  --status-on-dot: #22b8a3;
+  --status-on-ring: rgba(34, 184, 163, 0.26);
+  --status-on-bg: rgba(34, 184, 163, 0.14);
+  --status-on-text: #1e8e80;
 
-  --theme-toggle-bg: rgba(255, 255, 255, 0.72);
-  --theme-toggle-text: #27466f;
+  --theme-toggle-bg: #edf6ff;
+  --theme-toggle-text: #2f638f;
   --theme-toggle-border: var(--border);
-  --theme-toggle-shadow: 0 4px 10px rgba(35, 27, 20, 0.08);
+  --theme-toggle-shadow: 0 4px 10px rgba(44, 88, 130, 0.12);
 
-  --input-btn-bg: #fffaf2;
+  --input-btn-bg: #f8fbff;
   --input-btn-text: var(--ink);
-  --input-btn-border: var(--border);
-  --input-btn-shadow: 0 6px 14px rgba(35, 27, 20, 0.08);
-  --input-active-bg: #4a8bdf;
-  --input-active-border: #2f6fc2;
+  --input-btn-border: #c1d8ee;
+  --input-btn-shadow: 0 6px 14px rgba(44, 88, 130, 0.1);
+  --input-active-bg: linear-gradient(90deg, #1d79e4 0%, #18b8ef 100%);
+  --input-active-border: #1b7fdf;
   --input-active-text: #f5faff;
-  --input-active-ring: 0 0 0 2px rgba(74, 139, 223, 0.24);
+  --input-active-ring: 0 0 0 2px rgba(29, 121, 228, 0.24);
 
-  --toggle-bg: #f6f1e9;
-  --toggle-border: rgba(83, 73, 64, 0.3);
-  --toggle-text: #3f3730;
-  --toggle-shadow: 0 4px 10px rgba(35, 27, 20, 0.08);
-  --toggle-on-bg: #e8efe9;
-  --toggle-on-border: #7ea08f;
-  --toggle-on-text: #2d5a47;
-  --toggle-on-shadow: 0 4px 12px rgba(60, 120, 92, 0.14);
+  --toggle-bg: #f3f9ff;
+  --toggle-border: #b9d4ec;
+  --toggle-text: #486a88;
+  --toggle-shadow: 0 4px 10px rgba(44, 88, 130, 0.1);
+  --toggle-on-bg: #e7f8f5;
+  --toggle-on-border: #7fd8ca;
+  --toggle-on-text: #247f72;
+  --toggle-on-shadow: 0 4px 12px rgba(34, 184, 163, 0.14);
 
-  --ghost-text: var(--accent);
-  --ghost-border: var(--accent);
+  --ghost-text: #1d79e4;
+  --ghost-border: #1d79e4;
+
+  --slider-track-base: #d4e6f6;
+  --slider-vol: linear-gradient(90deg, #18b8ef 0%, #1d79e4 100%);
+  --slider-bal: linear-gradient(90deg, #20afe4 0%, #2a82e6 100%);
+  --slider-bri: linear-gradient(90deg, #28a5df 0%, #2f77d8 100%);
+  --slider-thumb-vol: #1d79e4;
+  --slider-thumb-bal: #2a82e6;
+  --slider-thumb-bri: #2f77d8;
+  --slider-thumb-border: #f6fcff;
 }
 
 :root[data-theme="dark"] {
@@ -96,6 +105,15 @@
 
   --ghost-text: #c6cad2;
   --ghost-border: #8f949f;
+
+  --slider-track-base: #e9f1fa;
+  --slider-vol: #4a8bdf;
+  --slider-bal: #2558ae;
+  --slider-bri: #01257d;
+  --slider-thumb-vol: #4a8bdf;
+  --slider-thumb-bal: #2f6fc2;
+  --slider-thumb-bri: #01257d;
+  --slider-thumb-border: #ffffff;
 }
 
 * {
@@ -285,50 +303,50 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-runnable-track {
   height: 8px;
-  background: #e9f1fa;
+  background: var(--slider-track-base);
   border-radius: 999px;
 }
 
 input[type="range"]::-moz-range-track {
   height: 8px;
-  background: #e9f1fa;
+  background: var(--slider-track-base);
   border-radius: 999px;
 }
 
 #volume::-webkit-slider-runnable-track {
-  background: #4a8bdf;
+  background: var(--slider-vol);
 }
 
 #volume::-moz-range-track {
-  background: #4a8bdf;
+  background: var(--slider-vol);
 }
 
 #balance::-webkit-slider-runnable-track {
-  background: #2558ae;
+  background: var(--slider-bal);
 }
 
 #balance::-moz-range-track {
-  background: #2558ae;
+  background: var(--slider-bal);
 }
 
 #brightness::-webkit-slider-runnable-track {
-  background: #01257d;
+  background: var(--slider-bri);
 }
 
 #brightness::-moz-range-track {
-  background: #01257d;
+  background: var(--slider-bri);
 }
 
 #volume {
-  accent-color: #4a8bdf;
+  accent-color: var(--slider-thumb-vol);
 }
 
 #balance {
-  accent-color: #2f6fc2;
+  accent-color: var(--slider-thumb-bal);
 }
 
 #brightness {
-  accent-color: #01257d;
+  accent-color: var(--slider-thumb-bri);
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -339,23 +357,23 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top: -7px;
   border-radius: 50%;
   background: var(--accent);
-  border: 2px solid #fff;
+  border: 2px solid var(--slider-thumb-border);
   box-shadow: 0 4px 10px rgba(15, 123, 108, 0.35);
   cursor: pointer;
 }
 
 #volume::-webkit-slider-thumb {
-  background: #4a8bdf;
+  background: var(--slider-thumb-vol);
   box-shadow: 0 4px 10px rgba(74, 139, 223, 0.35);
 }
 
 #balance::-webkit-slider-thumb {
-  background: #2f6fc2;
+  background: var(--slider-thumb-bal);
   box-shadow: 0 4px 10px rgba(47, 111, 194, 0.38);
 }
 
 #brightness::-webkit-slider-thumb {
-  background: #01257d;
+  background: var(--slider-thumb-bri);
   box-shadow: 0 4px 10px rgba(1, 37, 125, 0.42);
 }
 
@@ -364,23 +382,23 @@ input[type="range"]::-moz-range-thumb {
   height: 22px;
   border-radius: 50%;
   background: var(--accent);
-  border: 2px solid #fff;
+  border: 2px solid var(--slider-thumb-border);
   box-shadow: 0 4px 10px rgba(15, 123, 108, 0.35);
   cursor: pointer;
 }
 
 #volume::-moz-range-thumb {
-  background: #4a8bdf;
+  background: var(--slider-thumb-vol);
   box-shadow: 0 4px 10px rgba(74, 139, 223, 0.35);
 }
 
 #balance::-moz-range-thumb {
-  background: #2f6fc2;
+  background: var(--slider-thumb-bal);
   box-shadow: 0 4px 10px rgba(47, 111, 194, 0.38);
 }
 
 #brightness::-moz-range-thumb {
-  background: #01257d;
+  background: var(--slider-thumb-bri);
   box-shadow: 0 4px 10px rgba(1, 37, 125, 0.42);
 }
 
