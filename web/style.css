@@ -8,7 +8,7 @@
   --muted: #6886a4;
   --border: #bbd4eb;
   --shadow: 0 14px 30px rgba(44, 88, 130, 0.14);
-  --row-border: #e1edf8;
+  --row-border: transparent;
   --value-color: #2f638f;
 
   --status-wrap-bg: #edf6ff;
@@ -40,10 +40,10 @@
   --toggle-border: #b9d4ec;
   --toggle-text: #486a88;
   --toggle-shadow: 0 4px 10px rgba(44, 88, 130, 0.1);
-  --toggle-on-bg: #e7f8f5;
-  --toggle-on-border: #7fd8ca;
-  --toggle-on-text: #247f72;
-  --toggle-on-shadow: 0 4px 12px rgba(34, 184, 163, 0.14);
+  --toggle-on-bg: #d8ebff;
+  --toggle-on-border: #90b9e6;
+  --toggle-on-text: #2f5f90;
+  --toggle-on-shadow: 0 4px 12px rgba(29, 121, 228, 0.16);
 
   --ghost-text: #1d79e4;
   --ghost-border: #1d79e4;
