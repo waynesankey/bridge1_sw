@@ -158,6 +158,38 @@ body::before {
   gap: 8px;
 }
 
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  display: inline-flex;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+}
+
+.brand-icon-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.brand-icon-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .brand-icon-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .brand-icon-dark {
+  display: inline-flex;
+}
+
 h1 {
   margin: 0;
   font-size: 2.4rem;
@@ -487,6 +519,15 @@ button.ghost {
 }
 
 @media (max-width: 640px) {
+  .brand {
+    gap: 10px;
+  }
+
+  .brand-icon {
+    width: 52px;
+    height: 52px;
+  }
+
   .top {
     flex-direction: column;
     align-items: flex-start;

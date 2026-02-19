@@ -59,6 +59,20 @@ GET_DEDUP_COMMANDS = (
     "GET SELECTOR_LABELS",
 )
 
+STATIC_WEB_CONTENT_TYPES = {
+    "css": "text/css",
+    "js": "application/javascript",
+    "png": "image/png",
+    "svg": "image/svg+xml",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "gif": "image/gif",
+    "webp": "image/webp",
+    "ico": "image/x-icon",
+    "json": "application/json",
+    "txt": "text/plain",
+}
+
 
 WLAN_STAT_IDLE = getattr(network, "STAT_IDLE", 0)
 WLAN_STAT_CONNECTING = getattr(network, "STAT_CONNECTING", 1)
@@ -988,12 +1002,18 @@ async def handle_http(reader, writer, uart):
         else:
             await send_file(writer, "web/index.html", "text/html")
         return
-    if path == "/app.js":
-        await send_file(writer, "web/app.js", "application/javascript")
-        return
-    if path == "/style.css":
-        await send_file(writer, "web/style.css", "text/css")
-        return
+
+    # Serve static assets from web/ by extension (e.g. css/js/png/svg).
+    if path.startswith("/"):
+        rel = path[1:]
+        if rel and ".." not in rel:
+            ext = ""
+            if "." in rel:
+                ext = rel.rsplit(".", 1)[1].lower()
+            content_type = STATIC_WEB_CONTENT_TYPES.get(ext)
+            if content_type:
+                await send_file(writer, "web/" + rel, content_type)
+                return
 
     await send_response(writer, 404, "text/plain", "Not Found")
 
