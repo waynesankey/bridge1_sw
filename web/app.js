@@ -10,7 +10,6 @@ const inputGroupEl = document.getElementById("inputGroup");
 const muteEl = document.getElementById("mute");
 const refreshEl = document.getElementById("refresh");
 const themeToggleEl = document.getElementById("themeToggle");
-const themeToggleTextEl = document.getElementById("themeToggleText");
 
 let ws = null;
 let reconnectTimer = null;
@@ -45,9 +44,9 @@ const WS_FALLBACK_GRACE_MS = 2200;
 const RECONNECT_KICK_MIN_INTERVAL_MS = 2000;
 
 const THEME_STORAGE_KEY = "bridge_theme_mode";
-const THEME_CYCLE = ["auto", "light", "dark"];
+const THEME_CYCLE = ["light", "dark"];
 const systemDarkMedia = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
-let themeMode = "auto";
+let themeMode = "light";
 
 function isPageVisible() {
   return !document.hidden && document.visibilityState === "visible";
@@ -62,13 +61,16 @@ function setStatus(text, ok) {
 }
 
 function normalizeThemeMode(mode) {
-  return THEME_CYCLE.includes(mode) ? mode : "auto";
-}
-
-function getEffectiveTheme(mode) {
+  if (mode === "dark") {
+    return "dark";
+  }
   if (mode === "auto") {
     return systemDarkMedia && systemDarkMedia.matches ? "dark" : "light";
   }
+  return "light";
+}
+
+function getEffectiveTheme(mode) {
   return mode;
 }
 
@@ -76,18 +78,8 @@ function updateThemeToggleText() {
   if (!themeToggleEl) {
     return;
   }
-  let label = "Auto";
-  if (themeMode === "dark") {
-    label = "Dark";
-  } else if (themeMode === "light") {
-    label = "Light";
-  }
+  const label = themeMode === "dark" ? "Dark" : "Light";
   themeToggleEl.dataset.mode = themeMode;
-  if (themeToggleTextEl) {
-    themeToggleTextEl.textContent = label;
-  } else {
-    themeToggleEl.textContent = label;
-  }
   themeToggleEl.setAttribute("aria-label", "Theme: " + label);
 }
 
@@ -112,7 +104,7 @@ function cycleThemeMode() {
 }
 
 function initTheme() {
-  let storedMode = "auto";
+  let storedMode = "light";
   try {
     const raw = localStorage.getItem(THEME_STORAGE_KEY);
     if (raw) {
@@ -125,22 +117,6 @@ function initTheme() {
 
   if (themeToggleEl) {
     themeToggleEl.addEventListener("click", cycleThemeMode);
-  }
-
-  if (!systemDarkMedia) {
-    return;
-  }
-
-  const onSystemThemeChange = () => {
-    if (themeMode === "auto") {
-      setThemeMode("auto", false);
-    }
-  };
-
-  if (typeof systemDarkMedia.addEventListener === "function") {
-    systemDarkMedia.addEventListener("change", onSystemThemeChange);
-  } else if (typeof systemDarkMedia.addListener === "function") {
-    systemDarkMedia.addListener(onSystemThemeChange);
   }
 }
 
