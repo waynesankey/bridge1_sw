@@ -63,14 +63,16 @@ MPREMOTE_ARGS=(
   fs cp "$PICO_DIR/config.py" :
   +
   fs mkdir web
-  +
-  fs cp "$PICO_DIR/web/index.html" :web/index.html
-  +
-  fs cp "$PICO_DIR/web/app.js" :web/app.js
-  +
-  fs cp "$PICO_DIR/web/style.css" :web/style.css
-  +
-  reset
 )
+
+# Upload all files staged under pico/web so assets and theme files stay in sync.
+for src in "$PICO_DIR"/web/*; do
+  if [[ -f "$src" ]]; then
+    name="$(basename "$src")"
+    MPREMOTE_ARGS+=(+ fs cp "$src" ":web/$name")
+  fi
+done
+
+MPREMOTE_ARGS+=(+ reset)
 
 python3 -m mpremote "${MPREMOTE_ARGS[@]}"
