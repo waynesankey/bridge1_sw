@@ -57,7 +57,7 @@
   --muted: #b1b3b8;
   --border: rgba(235, 238, 245, 0.22);
   --shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
-  --row-border: rgba(235, 238, 245, 0.14);
+  --row-border: transparent;
   --value-color: #d2d5dc;
 
   --status-wrap-bg: rgba(33, 34, 38, 0.84);
@@ -249,7 +249,7 @@ h1 {
   grid-template-columns: 140px 1fr 70px;
   align-items: center;
   gap: 14px;
-  padding: 14px 0;
+  padding: 18px 0;
   border-bottom: 1px solid var(--row-border);
 }
 
