@@ -4,9 +4,8 @@ const volumeEl = document.getElementById("volume");
 const volumeValueEl = document.getElementById("volumeValue");
 const balanceEl = document.getElementById("balance");
 const balanceValueEl = document.getElementById("balanceValue");
-const brightnessEl = document.getElementById("brightness");
-const brightnessValueEl = document.getElementById("brightnessValue");
 const inputGroupEl = document.getElementById("inputGroup");
+const brightnessGroupEl = document.getElementById("brightnessGroup");
 const muteEl = document.getElementById("mute");
 const refreshEl = document.getElementById("refresh");
 const themeToggleEl = document.getElementById("themeToggle");
@@ -32,7 +31,6 @@ let suspendCloseInProgress = false;
 const MAX_QUEUED_LINES = 48;
 const UI_DEBOUNCE_VOL_MS = 25;
 const UI_DEBOUNCE_BAL_MS = 25;
-const UI_DEBOUNCE_BRI_MS = 40;
 const SYNC_COOLDOWN_FULL_MS = 120;
 const SYNC_COOLDOWN_STATE_MS = 80;
 const HTTP_FALLBACK_STATE_POLL_DELAY_MS = 60;
@@ -47,6 +45,12 @@ const THEME_STORAGE_KEY = "bridge_theme_mode";
 const THEME_CYCLE = ["light", "dark"];
 const systemDarkMedia = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 let themeMode = "light";
+const BRIGHTNESS_LEVELS = [
+  { value: 1, label: "Off" },
+  { value: 2, label: "Low" },
+  { value: 3, label: "Medium" },
+  { value: 4, label: "High" },
+];
 
 function isPageVisible() {
   return !document.hidden && document.visibilityState === "visible";
@@ -387,6 +391,48 @@ function setActiveInput(value) {
   });
 }
 
+function normalizeBrightnessValue(value) {
+  const n = Number(value);
+  if (n === 1 || n === 2 || n === 3 || n === 4) {
+    return n;
+  }
+  return 2;
+}
+
+function setActiveBrightness(value) {
+  if (!brightnessGroupEl) {
+    return;
+  }
+  const normalized = String(normalizeBrightnessValue(value));
+  const buttons = brightnessGroupEl.querySelectorAll("button[data-brightness]");
+  buttons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.brightness === normalized);
+  });
+  brightnessGroupEl.dataset.current = normalized;
+}
+
+function updateBrightnessOptions() {
+  if (!brightnessGroupEl) {
+    return;
+  }
+  const current = brightnessGroupEl.dataset.current || "1";
+  brightnessGroupEl.innerHTML = "";
+  BRIGHTNESS_LEVELS.forEach((level) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "input-btn";
+    btn.dataset.brightness = String(level.value);
+    btn.textContent = level.label;
+    btn.setAttribute("aria-label", `Brightness ${level.label}`);
+    btn.addEventListener("click", () => {
+      setActiveBrightness(level.value);
+      sendLine(`SET BRI ${level.value}`);
+    });
+    brightnessGroupEl.appendChild(btn);
+  });
+  setActiveBrightness(current);
+}
+
 function updateInputOptions() {
   const current = inputGroupEl.dataset.current || "1";
   inputGroupEl.innerHTML = "";
@@ -434,8 +480,7 @@ function handleStateLine(line) {
     balanceValueEl.textContent = state.BAL;
   }
   if (state.BRI !== undefined) {
-    brightnessEl.value = state.BRI;
-    brightnessValueEl.textContent = state.BRI;
+    setActiveBrightness(state.BRI);
   }
   if (state.INP !== undefined) {
     inputGroupEl.dataset.current = String(state.INP);
@@ -561,12 +606,6 @@ balanceEl.addEventListener("input", (event) => {
   scheduleSend("bal", `SET BAL ${value}`, UI_DEBOUNCE_BAL_MS);
 });
 
-brightnessEl.addEventListener("input", (event) => {
-  const value = event.target.value;
-  brightnessValueEl.textContent = value;
-  scheduleSend("bri", `SET BRI ${value}`, UI_DEBOUNCE_BRI_MS);
-});
-
 muteEl.addEventListener("click", () => {
   const isMuted = muteEl.classList.contains("on");
   const next = isMuted ? 0 : 1;
@@ -579,6 +618,7 @@ refreshEl.addEventListener("click", () => {
 
 initTheme();
 updateInputOptions();
+updateBrightnessOptions();
 connectWebSocket();
 startupPollTimer = setTimeout(() => {
   startupPollTimer = null;
