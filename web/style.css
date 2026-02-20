@@ -62,12 +62,12 @@
   color-scheme: dark;
   --bg: #0d0d0f;
   --panel: #191a1d;
-  --ink: #f0f1f3;
-  --muted: #b1b3b8;
+  --ink: #d6dbe3;
+  --muted: #9fa8b6;
   --border: rgba(235, 238, 245, 0.22);
   --shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
   --row-border: transparent;
-  --value-color: #d2d5dc;
+  --value-color: #c3c9d2;
 
   --status-wrap-bg: rgba(33, 34, 38, 0.84);
   --status-wrap-border: rgba(235, 238, 245, 0.24);
