@@ -19,6 +19,7 @@ from config import (
     WIFI_HOSTNAME,
     WIFI_CONFIG_FILE,
     WIFI_CONNECT_TIMEOUT_MS,
+    WIFI_AP_ACK_TIMEOUT_MS,
     HTTP_HOST,
     HTTP_PORT,
     UART_ID,
@@ -52,6 +53,9 @@ sta_status = "idle"
 sta_ip = ""
 sta_wlan = None
 sta_task = None
+ap_disable_task = None
+ap_ack_received = False
+ap_waiting_for_ack = False
 
 GET_DEDUP_MS = 350
 GET_DEDUP_COMMANDS = (
@@ -120,8 +124,24 @@ AP_PAGE = """<!doctype html>
       </form>
       <div id="staStatus" class="note">Waiting for Wi‑Fi credentials.</div>
       <div id="staIp" class="note"></div>
+      <div id="handoffHint" class="note"></div>
     </div>
     <script>
+      let staAckDone = false;
+      let staAckBusy = false;
+
+      async function sendStaAck() {
+        if (staAckDone || staAckBusy) return;
+        staAckBusy = true;
+        try {
+          const res = await fetch("/ack", { method: "POST" });
+          if (res.ok) {
+            staAckDone = true;
+          }
+        } catch (e) {}
+        staAckBusy = false;
+      }
+
       async function pollStatus() {
         try {
           const res = await fetch("/status");
@@ -132,15 +152,21 @@ AP_PAGE = """<!doctype html>
           const ip = parts[1] || "";
           const statusEl = document.getElementById("staStatus");
           const ipEl = document.getElementById("staIp");
+          const hintEl = document.getElementById("handoffHint");
           if (state === "CONNECTED") {
             statusEl.textContent = "Connected to Wi‑Fi.";
             ipEl.innerHTML = 'Open <a href="http://' + ip + '">' + ip + "</a>";
+            hintEl.textContent = "After clicking, switch this device back to your home Wi‑Fi.";
+            sendStaAck();
           } else if (state === "CONNECTING") {
             statusEl.textContent = "Connecting to Wi‑Fi...";
+            hintEl.textContent = "";
           } else if (state === "FAILED") {
             statusEl.textContent = "Failed to connect. Check SSID/password.";
+            hintEl.textContent = "";
           } else {
             statusEl.textContent = "Waiting for Wi‑Fi credentials.";
+            hintEl.textContent = "";
           }
         } catch (e) {}
       }
@@ -337,7 +363,7 @@ def start_sta_connect(creds):
 
 
 async def sta_connect_task(creds):
-    global sta_status, sta_ip, sta_wlan, sta_task, ap_setup_mode
+    global sta_status, sta_ip, sta_wlan, sta_task, ap_setup_mode, ap_disable_task, ap_ack_received, ap_waiting_for_ack
     wlan = start_sta_connect(creds)
     if wlan is None:
         sta_status = "failed"
@@ -363,8 +389,25 @@ async def sta_connect_task(creds):
     sta_ip = wlan.ifconfig()[0]
     sta_status = "connected"
     sta_task = None
-    ap_setup_mode = False
     log("Connected, IP:", sta_ip)
+    ap_setup_mode = True
+    ap_ack_received = False
+    ap_waiting_for_ack = True
+    if ap_disable_task is None:
+        ap_disable_task = asyncio.create_task(disable_ap_after_sta_ack())
+
+
+async def disable_ap_after_sta_ack():
+    global ap_setup_mode, ap_disable_task, ap_ack_received, ap_waiting_for_ack
+    t0 = time.ticks_ms()
+    while not ap_ack_received:
+        if time.ticks_diff(time.ticks_ms(), t0) >= WIFI_AP_ACK_TIMEOUT_MS:
+            log("AP ack timeout; disabling AP")
+            break
+        await asyncio.sleep_ms(200)
+    if ap_ack_received:
+        log("AP ack received; disabling AP")
+    await asyncio.sleep_ms(300)
     try:
         ap = network.WLAN(network.AP_IF)
         was_active = False
@@ -377,6 +420,10 @@ async def sta_connect_task(creds):
             log("AP disabled after STA connect")
     except Exception:
         pass
+    ap_setup_mode = False
+    ap_waiting_for_ack = False
+    ap_ack_received = False
+    ap_disable_task = None
 
 
 def uart_init():
@@ -827,6 +874,7 @@ async def ws_session(ws, uart):
 
 
 async def handle_http(reader, writer, uart):
+    global ap_ack_received, ap_waiting_for_ack
     try:
         request_line = await reader.readline()
     except OSError as exc:
@@ -939,6 +987,15 @@ async def handle_http(reader, writer, uart):
             await send_response(writer, 200, "text/plain", "OK")
             return
         await send_response(writer, 400, "text/plain", "BAD_CMD")
+        return
+    if method == "POST" and path == "/ack":
+        if sta_status == "connected":
+            ap_ack_received = True
+            ap_waiting_for_ack = False
+            log("AP client acknowledged STA IP:", sta_ip)
+            await send_response(writer, 200, "text/plain", "ACK")
+            return
+        await send_response(writer, 200, "text/plain", "WAIT")
         return
     if method == "POST" and path == "/retry":
         await send_response(writer, 200, "text/html", AP_PAGE.replace("__SSID__", ap_page_ssid))
