@@ -8,6 +8,7 @@ const inputGroupEl = document.getElementById("inputGroup");
 const brightnessGroupEl = document.getElementById("brightnessGroup");
 const muteEl = document.getElementById("mute");
 const refreshEl = document.getElementById("refresh");
+const volumeDisplayEl = document.getElementById("volumeDisplay");
 const themeToggleEl = document.getElementById("themeToggle");
 
 let ws = null;
@@ -27,6 +28,7 @@ let labelsPollCountdown = 0;
 let pendingStatePollTimer = null;
 let fallbackStartTimer = null;
 let suspendCloseInProgress = false;
+let volumeDisplayMode = "I";
 
 const MAX_QUEUED_LINES = 48;
 const UI_DEBOUNCE_VOL_MS = 25;
@@ -51,6 +53,12 @@ const BRIGHTNESS_LEVELS = [
   { value: 3, label: "Medium" },
   { value: 4, label: "High" },
 ];
+const VOLUME_DISPLAY_MODES = ["I", "P", "M"];
+const VOLUME_DISPLAY_LABELS = {
+  I: "INT",
+  P: "PLUS_DB",
+  M: "MINUS_DB",
+};
 
 function isPageVisible() {
   return !document.hidden && document.visibilityState === "visible";
@@ -62,6 +70,56 @@ function setStatus(text, ok) {
   if (statusDotEl) {
     statusDotEl.classList.toggle("ok", !!ok);
   }
+}
+
+function normalizeVolumeDisplayMode(value) {
+  const text = String(value || "").toUpperCase();
+  if (text === "I" || text === "INT") {
+    return "I";
+  }
+  if (text === "P" || text === "PLUS_DB") {
+    return "P";
+  }
+  if (text === "M" || text === "MINUS_DB") {
+    return "M";
+  }
+  return "I";
+}
+
+function updateVolumeDisplayButton(mode) {
+  if (!volumeDisplayEl) {
+    return;
+  }
+  volumeDisplayMode = normalizeVolumeDisplayMode(mode);
+  volumeDisplayEl.textContent = `Volume Display: ${VOLUME_DISPLAY_LABELS[volumeDisplayMode]}`;
+  volumeDisplayEl.dataset.mode = volumeDisplayMode;
+}
+
+function formatHalfDb(halfSteps) {
+  const steps = Math.abs(Number(halfSteps) || 0);
+  const whole = Math.floor(steps / 2);
+  const frac = steps % 2;
+  return frac ? `${whole}.5` : `${whole}.0`;
+}
+
+function formatVolumeValue(value) {
+  const n = Number(value) || 0;
+  if (volumeDisplayMode === "P") {
+    return `${formatHalfDb(n)} dB`;
+  }
+  if (volumeDisplayMode === "M") {
+    return `-${formatHalfDb(64 - n)} dB`;
+  }
+  return String(n);
+}
+
+function formatBalanceValue(value) {
+  const n = Number(value) || 0;
+  if (n === 0) {
+    return "0.0 dB";
+  }
+  const side = n > 0 ? "R" : "L";
+  return `${side} +${formatHalfDb(n)} dB`;
 }
 
 function normalizeThemeMode(mode) {
@@ -473,11 +531,11 @@ function handleStateLine(line) {
 
   if (state.VOL !== undefined) {
     volumeEl.value = state.VOL;
-    volumeValueEl.textContent = state.VOL;
+    volumeValueEl.textContent = formatVolumeValue(state.VOL);
   }
   if (state.BAL !== undefined) {
     balanceEl.value = state.BAL;
-    balanceValueEl.textContent = state.BAL;
+    balanceValueEl.textContent = formatBalanceValue(state.BAL);
   }
   if (state.BRI !== undefined) {
     setActiveBrightness(state.BRI);
@@ -490,6 +548,10 @@ function handleStateLine(line) {
     const isMuted = Number(state.MUTE) === 1;
     muteEl.textContent = isMuted ? "On" : "Off";
     muteEl.classList.toggle("on", isMuted);
+  }
+  if (state.DVU !== undefined) {
+    updateVolumeDisplayButton(state.DVU);
+    volumeValueEl.textContent = formatVolumeValue(volumeEl.value);
   }
 }
 
@@ -596,13 +658,13 @@ function forceReconnectWebSocket() {
 
 volumeEl.addEventListener("input", (event) => {
   const value = event.target.value;
-  volumeValueEl.textContent = value;
+  volumeValueEl.textContent = formatVolumeValue(value);
   scheduleSend("vol", `SET VOL ${value}`, UI_DEBOUNCE_VOL_MS);
 });
 
 balanceEl.addEventListener("input", (event) => {
   const value = event.target.value;
-  balanceValueEl.textContent = value;
+  balanceValueEl.textContent = formatBalanceValue(value);
   scheduleSend("bal", `SET BAL ${value}`, UI_DEBOUNCE_BAL_MS);
 });
 
@@ -616,9 +678,19 @@ refreshEl.addEventListener("click", () => {
   requestFullSync(0);
 });
 
+if (volumeDisplayEl) {
+  volumeDisplayEl.addEventListener("click", () => {
+    const currentIndex = VOLUME_DISPLAY_MODES.indexOf(volumeDisplayMode);
+    const nextMode = VOLUME_DISPLAY_MODES[(currentIndex + 1) % VOLUME_DISPLAY_MODES.length];
+    updateVolumeDisplayButton(nextMode);
+    sendLine(`SET DVU ${nextMode}`);
+  });
+}
+
 initTheme();
 updateInputOptions();
 updateBrightnessOptions();
+updateVolumeDisplayButton(volumeDisplayMode);
 connectWebSocket();
 startupPollTimer = setTimeout(() => {
   startupPollTimer = null;
