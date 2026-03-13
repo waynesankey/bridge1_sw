@@ -330,6 +330,15 @@ def wifi_connect(creds, force_ap):
 def start_sta_connect(creds):
     global sta_wlan, sta_status
     wlan = network.WLAN(network.STA_IF)
+    # Set hostname before activating so the firmware mDNS stack registers it correctly
+    try:
+        network.hostname(WIFI_HOSTNAME)
+    except Exception:
+        pass
+    try:
+        wlan.config(hostname=WIFI_HOSTNAME)
+    except Exception:
+        pass
     wlan.active(True)
     # Avoid multi-second latency spikes from CYW43 Wi-Fi power-save.
     try:
@@ -339,14 +348,6 @@ def start_sta_connect(creds):
         if pm_none is None:
             pm_none = 0xA11140
         wlan.config(pm=pm_none)
-    except Exception:
-        pass
-    try:
-        network.hostname(WIFI_HOSTNAME)
-    except Exception:
-        pass
-    try:
-        wlan.config(hostname=WIFI_HOSTNAME)
     except Exception:
         pass
     try:
@@ -1355,6 +1356,7 @@ async def main():
     asyncio.create_task(uart_writer_task(uart))
     asyncio.create_task(uart_reader_task(uart))
     asyncio.create_task(uart_startup_sync(uart))
+
 
     gc.collect()
     server = await asyncio.start_server(
