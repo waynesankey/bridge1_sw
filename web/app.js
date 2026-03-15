@@ -692,6 +692,10 @@ updateInputOptions();
 updateBrightnessOptions();
 updateVolumeDisplayButton(volumeDisplayMode);
 connectWebSocket();
+fetch("/api/version").then((r) => r.text()).then((v) => {
+  const el = document.getElementById("version");
+  if (el) el.textContent = "SW Version: " + v.trim();
+}).catch(() => {});
 startupPollTimer = setTimeout(() => {
   startupPollTimer = null;
   if (isPageVisible() && (!ws || ws.readyState !== WebSocket.OPEN)) {

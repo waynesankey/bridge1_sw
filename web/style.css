@@ -283,8 +283,14 @@ h1 {
 
 .panel-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 4px;
+}
+
+.version {
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 .panel-title {

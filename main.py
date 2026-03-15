@@ -30,7 +30,8 @@ from config import (
     UART_TX_PIN,
     UART_RX_PIN,
     UART_POLL_MS,
-    UART_STARTUP_SYNC_DELAY_MS
+    UART_STARTUP_SYNC_DELAY_MS,
+    SW_VERSION,
 )
 
 WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -1045,6 +1046,9 @@ async def handle_http(reader, writer, uart):
         return
     if path == "/api/labels":
         await send_response(writer, 200, "text/plain", last_labels_line or "")
+        return
+    if path == "/api/version":
+        await send_response(writer, 200, "text/plain", str(SW_VERSION))
         return
     if path == "/api/amp_states":
         await send_response(writer, 200, "text/plain", last_amp_states_line or "")
