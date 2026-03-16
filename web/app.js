@@ -9,6 +9,12 @@ const brightnessGroupEl = document.getElementById("brightnessGroup");
 const muteEl = document.getElementById("mute");
 const refreshEl = document.getElementById("refresh");
 const volumeDisplayEl = document.getElementById("volumeDisplay");
+const editLabelsBtnEl = document.getElementById("editLabels");
+const labelsModalEl = document.getElementById("labelsModal");
+const labelsModalCloseEl = document.getElementById("labelsModalClose");
+const labelsModalCancelEl = document.getElementById("labelsModalCancel");
+const labelsModalSaveEl = document.getElementById("labelsModalSave");
+const labelsFieldsEl = document.getElementById("labelsFields");
 const themeToggleEl = document.getElementById("themeToggle");
 
 let ws = null;
@@ -686,6 +692,65 @@ if (volumeDisplayEl) {
     sendLine(`SET DVU ${nextMode}`);
   });
 }
+
+function openLabelsModal() {
+  labelsFieldsEl.innerHTML = "";
+  const keys = ["1", "2", "3", "4"];
+  keys.forEach((key) => {
+    const row = document.createElement("div");
+    row.className = "modal-field-row";
+    const lbl = document.createElement("label");
+    lbl.className = "modal-field-label";
+    lbl.setAttribute("for", `lbl-inp-${key}`);
+    lbl.textContent = `Input ${key}`;
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.id = `lbl-inp-${key}`;
+    inp.maxLength = 16;
+    inp.value = labels[key] || `Input ${key}`;
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") labelsModalSaveEl.click();
+      if (e.key === "Escape") closeLabelsModal();
+    });
+    row.appendChild(lbl);
+    row.appendChild(inp);
+    labelsFieldsEl.appendChild(row);
+  });
+  labelsModalEl.classList.add("open");
+  const first = labelsFieldsEl.querySelector("input");
+  if (first) first.focus();
+}
+
+function closeLabelsModal() {
+  labelsModalEl.classList.remove("open");
+}
+
+function saveLabels() {
+  const keys = ["1", "2", "3", "4"];
+  const newLabels = {};
+  keys.forEach((key) => {
+    const inp = document.getElementById(`lbl-inp-${key}`);
+    newLabels[key] = (inp && inp.value.trim()) ? inp.value.trim() : (labels[key] || `Input ${key}`);
+  });
+  const cmd = `SET LABELS INP1="${newLabels["1"]}" INP2="${newLabels["2"]}" INP3="${newLabels["3"]}" INP4="${newLabels["4"]}"`;
+  sendLine(cmd);
+  closeLabelsModal();
+}
+
+if (editLabelsBtnEl) editLabelsBtnEl.addEventListener("click", openLabelsModal);
+if (labelsModalCloseEl) labelsModalCloseEl.addEventListener("click", closeLabelsModal);
+if (labelsModalCancelEl) labelsModalCancelEl.addEventListener("click", closeLabelsModal);
+if (labelsModalSaveEl) labelsModalSaveEl.addEventListener("click", saveLabels);
+if (labelsModalEl) {
+  labelsModalEl.addEventListener("click", (e) => {
+    if (e.target === labelsModalEl) closeLabelsModal();
+  });
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && labelsModalEl && labelsModalEl.classList.contains("open")) {
+    closeLabelsModal();
+  }
+});
 
 initTheme();
 updateInputOptions();

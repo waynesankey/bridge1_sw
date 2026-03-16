@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>The Monster</title>
-    <link rel="stylesheet" href="/style.css?v=20260311a" />
+    <link rel="stylesheet" href="/style.css?v=20260315a" />
   </head>
   <body>
     <div class="app">
@@ -58,6 +58,7 @@
           <div class="actions-group">
             <button id="volumeDisplay" class="ghost" type="button">Volume Display: INT</button>
             <button id="refresh" class="ghost" type="button">Refresh</button>
+            <button id="editLabels" class="ghost" type="button">Edit Input Names</button>
           </div>
         </div>
 
@@ -72,6 +73,20 @@
 
     </div>
 
-    <script src="/app.js?v=20260311a"></script>
+    <div class="modal-overlay" id="labelsModal" role="dialog" aria-modal="true" aria-labelledby="labelsModalTitle">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title" id="labelsModalTitle">Input Names</h3>
+          <button class="modal-close" id="labelsModalClose" type="button" aria-label="Close">&#x2715;</button>
+        </div>
+        <div id="labelsFields"></div>
+        <div class="modal-footer">
+          <button class="modal-btn-cancel" id="labelsModalCancel" type="button">Cancel</button>
+          <button class="modal-btn-save"   id="labelsModalSave"   type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js?v=20260315a"></script>
   </body>
 </html>
