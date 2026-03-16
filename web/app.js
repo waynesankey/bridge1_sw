@@ -262,6 +262,7 @@ function requestFullSync(delayMs = 0) {
     syncCooldownUntilMs = Date.now() + SYNC_COOLDOWN_FULL_MS;
     sendLine("GET STATE");
     sendLine("GET SELECTOR_LABELS");
+    sendLine("GET PREAMP_SW_VERSION");
   };
 
   if (pendingSyncTimer) {
@@ -612,6 +613,9 @@ function connectWebSocket() {
       handleStateLine(line);
     } else if (line.startsWith("SELECTOR_LABELS")) {
       handleLabelsLine(line);
+    } else if (line.startsWith("PREAMP_SW_VERSION")) {
+      const el = document.getElementById("preamp-version");
+      if (el) el.textContent = "  Preamp SW Version: " + line.slice("PREAMP_SW_VERSION".length).trim();
     }
   });
 

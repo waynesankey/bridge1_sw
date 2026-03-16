@@ -1,6 +1,6 @@
 # Bridge configuration for Pico 2W (MicroPython)
 
-SW_VERSION = 43
+SW_VERSION = 45
 
 # Wi-Fi mode: "sta" (connect to existing Wi-Fi) or "ap" (create access point)
 WIFI_MODE = "sta"

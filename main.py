@@ -41,6 +41,7 @@ clients = set()
 last_state_line = None
 last_labels_line = None
 last_amp_states_line = None
+last_preamp_version_line = None
 tube_lines = {}
 tubes_end_seen = False
 ap_setup_mode = False
@@ -694,7 +695,7 @@ def normalize_client_command(line):
 
 
 def handle_uart_line(line):
-    global last_state_line, last_labels_line, last_amp_states_line, tubes_end_seen
+    global last_state_line, last_labels_line, last_amp_states_line, last_preamp_version_line, tubes_end_seen
 
     def strip_embedded_tubes_end(raw):
         if "END TUBES" in raw:
@@ -709,6 +710,9 @@ def handle_uart_line(line):
     if line.startswith("SELECTOR_LABELS"):
         last_labels_line = line
         return "labels", [line]
+    if line.startswith("PREAMP_SW_VERSION"):
+        last_preamp_version_line = line
+        return "preamp_version", [line]
     if line.startswith("AMP_STATES"):
         last_amp_states_line = line
         return "amp_states", [line]
@@ -735,6 +739,7 @@ def _next_uart_marker_index(text, start):
     markers = (
         "STATE ",
         "SELECTOR_LABELS",
+        "PREAMP_SW_VERSION",
         "AMP_STATES",
         "TUBE ",
         "ACK ",
@@ -836,6 +841,7 @@ async def uart_startup_sync(uart):
     await asyncio.sleep_ms(UART_STARTUP_SYNC_DELAY_MS)
     uart_send(uart, "GET STATE")
     uart_send(uart, "GET SELECTOR_LABELS")
+    uart_send(uart, "GET PREAMP_SW_VERSION")
 
 
 async def ws_session(ws, uart):
@@ -844,6 +850,8 @@ async def ws_session(ws, uart):
     try:
         if last_labels_line:
             await ws.send_text(last_labels_line)
+        if last_preamp_version_line:
+            await ws.send_text(last_preamp_version_line)
         if last_state_line:
             await ws.send_text(last_state_line)
         if last_amp_states_line:
