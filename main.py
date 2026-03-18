@@ -1085,7 +1085,24 @@ async def handle_http(reader, writer, uart):
                 await send_file(writer, "web/" + rel, content_type)
                 return
 
+    if is_setup_mode_active():
+        await send_redirect(writer, "http://192.168.4.1/")
+        return
     await send_response(writer, 404, "text/plain", "Not Found")
+
+
+async def send_redirect(writer, url):
+    header = (
+        "HTTP/1.1 302 Found\r\n"
+        "Location: %s\r\n"
+        "Content-Length: 0\r\n"
+        "Connection: close\r\n\r\n"
+    ) % url
+    try:
+        writer.write(header.encode("utf-8"))
+        await writer.drain()
+    except OSError:
+        pass
 
 
 async def send_response(writer, status_code, content_type, body):
