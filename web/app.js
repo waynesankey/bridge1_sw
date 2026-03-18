@@ -473,15 +473,46 @@ function setActiveBrightness(value) {
   buttons.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.brightness === normalized);
   });
+  const autoBtn = brightnessGroupEl.querySelector("button[data-brightness-auto]");
+  if (autoBtn) autoBtn.classList.remove("active");
   brightnessGroupEl.dataset.current = normalized;
+  brightnessGroupEl.dataset.brightnessAuto = "0";
+}
+
+function setBrightnessAuto(isAuto) {
+  if (!brightnessGroupEl) {
+    return;
+  }
+  const autoBtn = brightnessGroupEl.querySelector("button[data-brightness-auto]");
+  if (autoBtn) autoBtn.classList.toggle("active", isAuto);
+  if (isAuto) {
+    brightnessGroupEl.querySelectorAll("button[data-brightness]").forEach((btn) => {
+      btn.classList.remove("active");
+    });
+  }
+  brightnessGroupEl.dataset.brightnessAuto = isAuto ? "1" : "0";
 }
 
 function updateBrightnessOptions() {
   if (!brightnessGroupEl) {
     return;
   }
-  const current = brightnessGroupEl.dataset.current || "1";
+  const current = brightnessGroupEl.dataset.current || "2";
+  const isAuto = brightnessGroupEl.dataset.brightnessAuto === "1";
   brightnessGroupEl.innerHTML = "";
+
+  const autoBtn = document.createElement("button");
+  autoBtn.type = "button";
+  autoBtn.className = "input-btn";
+  autoBtn.dataset.brightnessAuto = "true";
+  autoBtn.textContent = "Auto";
+  autoBtn.setAttribute("aria-label", "Brightness Auto");
+  autoBtn.addEventListener("click", () => {
+    setBrightnessAuto(true);
+    sendLine("SET BRI_AUTO 1");
+  });
+  brightnessGroupEl.appendChild(autoBtn);
+
   BRIGHTNESS_LEVELS.forEach((level) => {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -495,7 +526,12 @@ function updateBrightnessOptions() {
     });
     brightnessGroupEl.appendChild(btn);
   });
-  setActiveBrightness(current);
+
+  if (isAuto) {
+    setBrightnessAuto(true);
+  } else {
+    setActiveBrightness(current);
+  }
 }
 
 function updateInputOptions() {
@@ -546,6 +582,9 @@ function handleStateLine(line) {
   }
   if (state.BRI !== undefined) {
     setActiveBrightness(state.BRI);
+  }
+  if (state.BRIA !== undefined) {
+    setBrightnessAuto(Number(state.BRIA) === 1);
   }
   if (state.INP !== undefined) {
     inputGroupEl.dataset.current = String(state.INP);
