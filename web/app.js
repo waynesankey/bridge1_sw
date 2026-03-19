@@ -505,8 +505,8 @@ function updateBrightnessOptions() {
   autoBtn.type = "button";
   autoBtn.className = "input-btn";
   autoBtn.dataset.brightnessAuto = "true";
-  autoBtn.textContent = "Auto";
-  autoBtn.setAttribute("aria-label", "Brightness Auto");
+  autoBtn.textContent = "Night";
+  autoBtn.setAttribute("aria-label", "Brightness Night");
   autoBtn.addEventListener("click", () => {
     setBrightnessAuto(true);
     sendLine("SET BRI_AUTO 1");
