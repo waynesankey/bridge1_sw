@@ -8,6 +8,7 @@ import machine
 import socket
 import gc
 import os
+import ntptime
 from machine import UART, Pin
 
 from config import (
@@ -844,6 +845,53 @@ async def uart_startup_sync(uart):
     uart_send(uart, "GET PREAMP_SW_VERSION")
 
 
+utc_offset_s = 0
+
+def _format_time_str():
+    t = time.localtime(time.time() + utc_offset_s)
+    h, m = t[3], t[4]
+    ampm = "AM" if h < 12 else "PM"
+    h12 = h % 12 or 12
+    return "%d:%02d %s" % (h12, m, ampm)
+
+
+async def ntp_time_task(uart):
+    # Initial NTP sync with retries
+    synced = False
+    for attempt in range(5):
+        try:
+            ntptime.settime()
+            synced = True
+            log("NTP sync OK")
+            break
+        except Exception as exc:
+            log("NTP sync attempt", attempt + 1, "failed:", exc)
+            await asyncio.sleep(10)
+    if not synced:
+        log("NTP sync failed; time display unavailable")
+        return
+
+    # Send immediately so the amp has a reading right away
+    uart_send(uart, "SET TIME " + _format_time_str())
+
+    # Sleep until the next minute boundary so all subsequent sends land on the minute tick
+    secs_past = time.localtime()[5]
+    await asyncio.sleep(60 - secs_past)
+
+    ntp_resync_ticks = 0
+    while True:
+        uart_send(uart, "SET TIME " + _format_time_str())
+        await asyncio.sleep(60)
+        ntp_resync_ticks += 1
+        if ntp_resync_ticks >= 60:          # re-sync every hour
+            ntp_resync_ticks = 0
+            try:
+                ntptime.settime()
+                log("NTP re-sync OK")
+            except Exception as exc:
+                log("NTP re-sync failed:", exc)
+
+
 async def ws_session(ws, uart):
     clients.add(ws)
     log("WS client connected; clients=", len(clients))
@@ -870,6 +918,14 @@ async def ws_session(ws, uart):
             if not msg:
                 continue
 
+            if msg.upper().startswith("SET UTC_OFFSET "):
+                global utc_offset_s
+                try:
+                    utc_offset_s = int(msg.split()[2])
+                    log("UTC offset set to", utc_offset_s, "s")
+                except (IndexError, ValueError):
+                    pass
+                continue
             cmd = normalize_client_command(msg)
             if cmd:
                 uart_send(uart, cmd)
@@ -1385,6 +1441,8 @@ async def main():
     asyncio.create_task(uart_writer_task(uart))
     asyncio.create_task(uart_reader_task(uart))
     asyncio.create_task(uart_startup_sync(uart))
+    if sta_connected:
+        asyncio.create_task(ntp_time_task(uart))
 
 
     gc.collect()

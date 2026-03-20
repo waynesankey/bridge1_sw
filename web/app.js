@@ -17,6 +17,9 @@ const labelsModalSaveEl = document.getElementById("labelsModalSave");
 const labelsFieldsEl = document.getElementById("labelsFields");
 const themeToggleEl = document.getElementById("themeToggle");
 
+let clockTimezone = null;
+let clockTimer = null;
+
 let ws = null;
 let reconnectTimer = null;
 let pollTimer = null;
@@ -639,6 +642,7 @@ function connectWebSocket() {
     }
     flushQueuedLines();
     requestFullSync(0);
+    sendLine("SET UTC_OFFSET " + (-new Date().getTimezoneOffset() * 60));
   });
 
   socket.addEventListener("message", (event) => {
@@ -794,6 +798,43 @@ document.addEventListener("keydown", (e) => {
     closeLabelsModal();
   }
 });
+
+async function fetchTimezone() {
+  try {
+    const res = await fetch("http://ip-api.com/json?fields=timezone", { cache: "no-store" });
+    const data = await res.json();
+    if (data && data.timezone) {
+      clockTimezone = data.timezone;
+    }
+  } catch (err) {
+    clockTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  }
+  if (!clockTimezone) {
+    clockTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  }
+}
+
+function updateClock() {
+  const el = document.getElementById("clockValue");
+  if (!el) return;
+  const tz = clockTimezone || "UTC";
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString("en-US", {
+    timeZone: tz,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  el.textContent = timeStr;
+}
+
+function startClock() {
+  updateClock();
+  if (clockTimer) clearInterval(clockTimer);
+  clockTimer = setInterval(updateClock, 10000);
+}
+
+fetchTimezone().then(startClock);
 
 initTheme();
 updateInputOptions();
