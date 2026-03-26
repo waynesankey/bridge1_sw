@@ -847,6 +847,39 @@ async def uart_startup_sync(uart):
 
 utc_offset_s = 0
 
+def _fetch_utc_offset():
+    """Fetch UTC offset in seconds from ip-api.com using a raw socket."""
+    global utc_offset_s
+    try:
+        host = "ip-api.com"
+        path = "/json?fields=offset"
+        addr = socket.getaddrinfo(host, 80)[0][-1]
+        s = socket.socket()
+        s.settimeout(10)
+        s.connect(addr)
+        s.send(("GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host)).encode())
+        response = b""
+        while True:
+            chunk = s.recv(256)
+            if not chunk:
+                break
+            response += chunk
+        s.close()
+        body = response.split(b"\r\n\r\n", 1)[-1].decode()
+        # body is like {"offset":-18000}
+        idx = body.find('"offset"')
+        if idx >= 0:
+            colon = body.index(':', idx)
+            end = len(body)
+            for ch in ('}', ','):
+                pos = body.find(ch, colon)
+                if pos >= 0 and pos < end:
+                    end = pos
+            utc_offset_s = int(body[colon + 1:end].strip())
+            log("UTC offset from ip-api.com:", utc_offset_s, "s")
+    except Exception as exc:
+        log("Failed to fetch UTC offset:", exc)
+
 def _format_time_str():
     t = time.localtime(time.time() + utc_offset_s)
     h, m = t[3], t[4]
@@ -871,25 +904,28 @@ async def ntp_time_task(uart):
         log("NTP sync failed; time display unavailable")
         return
 
+    # Fetch timezone offset directly so first SET TIME uses local time
+    _fetch_utc_offset()
+
     # Send immediately so the amp has a reading right away
     uart_send(uart, "SET TIME " + _format_time_str())
 
-    # Sleep until the next minute boundary so all subsequent sends land on the minute tick
-    secs_past = time.localtime()[5]
-    await asyncio.sleep(60 - secs_past)
-
-    ntp_resync_ticks = 0
+    # Poll the RTC every 500ms; send exactly when seconds rolls to 0.
+    last_minute = time.localtime()[4]
+    last_ntp_s = time.time()
     while True:
-        uart_send(uart, "SET TIME " + _format_time_str())
-        await asyncio.sleep(60)
-        ntp_resync_ticks += 1
-        if ntp_resync_ticks >= 60:          # re-sync every hour
-            ntp_resync_ticks = 0
+        await asyncio.sleep_ms(500)
+        t = time.localtime()
+        if t[5] == 0 and t[4] != last_minute:
+            uart_send(uart, "SET TIME " + _format_time_str())
+            last_minute = t[4]
+        if time.time() - last_ntp_s >= 3600:
             try:
                 ntptime.settime()
                 log("NTP re-sync OK")
             except Exception as exc:
                 log("NTP re-sync failed:", exc)
+            last_ntp_s = time.time()
 
 
 async def ws_session(ws, uart):
