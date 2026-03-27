@@ -33,6 +33,8 @@ from config import (
     UART_POLL_MS,
     UART_STARTUP_SYNC_DELAY_MS,
     SW_VERSION,
+    AMP_WATCHDOG_INTERVAL_S,
+    AMP_DISCONNECT_TIMEOUT_MS,
 )
 
 WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -65,6 +67,8 @@ GET_DEDUP_COMMANDS = (
     "GET STATE",
     "GET SELECTOR_LABELS",
 )
+
+amp_connected = False
 
 STATIC_WEB_CONTENT_TYPES = {
     "css": "text/css",
@@ -928,6 +932,21 @@ async def ntp_time_task(uart):
             last_ntp_s = time.time()
 
 
+async def amp_watchdog_task(uart):
+    global amp_connected
+    await asyncio.sleep(5)  # let startup sync settle
+    while True:
+        now = time.ticks_ms()
+        is_connected = (uart_last_rx_ms > 0 and
+                        time.ticks_diff(now, uart_last_rx_ms) < AMP_DISCONNECT_TIMEOUT_MS)
+        if is_connected != amp_connected:
+            amp_connected = is_connected
+            await broadcast("AMP_STATUS %d" % (1 if amp_connected else 0))
+            log("Amp", "connected" if amp_connected else "disconnected")
+        uart_send(uart, "GET STATE")
+        await asyncio.sleep(AMP_WATCHDOG_INTERVAL_S)
+
+
 async def ws_session(ws, uart):
     clients.add(ws)
     log("WS client connected; clients=", len(clients))
@@ -940,6 +959,7 @@ async def ws_session(ws, uart):
             await ws.send_text(last_state_line)
         if last_amp_states_line:
             await ws.send_text(last_amp_states_line)
+        await ws.send_text("AMP_STATUS %d" % (1 if amp_connected else 0))
         tubes_text = render_tubes_lines()
         if tubes_text:
             for line in tubes_text.split("\n"):
@@ -1477,6 +1497,7 @@ async def main():
     asyncio.create_task(uart_writer_task(uart))
     asyncio.create_task(uart_reader_task(uart))
     asyncio.create_task(uart_startup_sync(uart))
+    asyncio.create_task(amp_watchdog_task(uart))
     if sta_connected:
         asyncio.create_task(ntp_time_task(uart))
 

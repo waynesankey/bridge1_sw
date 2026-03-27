@@ -218,6 +218,12 @@ h1 {
   font-size: 0.95rem;
 }
 
+.status-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .status-wrap {
   display: inline-flex;
   align-items: center;

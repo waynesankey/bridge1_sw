@@ -1,6 +1,6 @@
 # Bridge configuration for Pico 2W (MicroPython)
 
-SW_VERSION = 54
+SW_VERSION = 55
 
 # Wi-Fi mode: "sta" (connect to existing Wi-Fi) or "ap" (create access point)
 WIFI_MODE = "sta"
@@ -46,3 +46,5 @@ BRI_MAX = 8
 UART_POLL_MS = 10
 UART_STARTUP_SYNC_DELAY_MS = 500
 WS_PING_INTERVAL_S = 25
+AMP_WATCHDOG_INTERVAL_S = 15
+AMP_DISCONNECT_TIMEOUT_MS = 20000

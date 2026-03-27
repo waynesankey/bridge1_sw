@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>The Monster</title>
-    <link rel="stylesheet" href="/style.css?v=20260319c" />
+    <link rel="stylesheet" href="/style.css?v=20260327a" />
   </head>
   <body>
     <div class="app">
@@ -69,9 +69,15 @@
 
         <div class="panel-footer">
           <span class="version" id="version"></span><span class="version" id="preamp-version"></span>
-          <div class="status-wrap">
-            <span class="status-dot" id="statusDot"></span>
-            <div class="status" id="status">Disconnected</div>
+          <div class="status-pills">
+            <div class="status-wrap">
+              <span class="status-dot" id="ampStatusDot"></span>
+              <div class="status" id="ampStatus">Amp Disconnected</div>
+            </div>
+            <div class="status-wrap">
+              <span class="status-dot" id="statusDot"></span>
+              <div class="status" id="status">WiFi Disconnected</div>
+            </div>
           </div>
         </div>
       </section>
@@ -92,6 +98,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=20260319c"></script>
+    <script src="/app.js?v=20260327a"></script>
   </body>
 </html>

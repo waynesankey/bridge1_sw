@@ -1,5 +1,7 @@
 const statusEl = document.getElementById("status");
 const statusDotEl = document.getElementById("statusDot");
+const ampStatusEl = document.getElementById("ampStatus");
+const ampStatusDotEl = document.getElementById("ampStatusDot");
 const volumeEl = document.getElementById("volume");
 const volumeValueEl = document.getElementById("volumeValue");
 const balanceEl = document.getElementById("balance");
@@ -78,6 +80,16 @@ function setStatus(text, ok) {
   statusEl.classList.toggle("ok", !!ok);
   if (statusDotEl) {
     statusDotEl.classList.toggle("ok", !!ok);
+  }
+}
+
+function setAmpStatus(ok) {
+  if (ampStatusEl) {
+    ampStatusEl.textContent = ok ? "Amp Connected" : "Amp Disconnected";
+    ampStatusEl.classList.toggle("ok", !!ok);
+  }
+  if (ampStatusDotEl) {
+    ampStatusDotEl.classList.toggle("ok", !!ok);
   }
 }
 
@@ -628,7 +640,7 @@ function connectWebSocket() {
     if (ws !== socket) {
       return;
     }
-    setStatus("Connected", true);
+    setStatus("WiFi Connected", true);
     wsLastMessageMs = Date.now();
     suspendCloseInProgress = false;
     labelsPollCountdown = 0;
@@ -659,6 +671,8 @@ function connectWebSocket() {
     } else if (line.startsWith("PREAMP_SW_VERSION")) {
       const el = document.getElementById("preamp-version");
       if (el) el.textContent = "  Preamp SW Version: " + line.slice("PREAMP_SW_VERSION".length).trim();
+    } else if (line.startsWith("AMP_STATUS ")) {
+      setAmpStatus(line.split(" ")[1] === "1");
     }
   });
 
@@ -667,7 +681,7 @@ function connectWebSocket() {
       return;
     }
     ws = null;
-    setStatus("Disconnected", false);
+    setStatus("WiFi Disconnected", false);
     stopWsHealthTimer();
 
     const code = Number((event && event.code) || 0);
@@ -690,7 +704,7 @@ function connectWebSocket() {
     if (ws !== socket) {
       return;
     }
-    setStatus("Error", false);
+    setStatus("WiFi Error", false);
     stopWsHealthTimer();
   });
 }
