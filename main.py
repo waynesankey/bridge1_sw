@@ -8,7 +8,6 @@ import machine
 import socket
 import gc
 import os
-import ntptime
 from machine import UART, Pin
 
 from config import (
@@ -681,6 +680,8 @@ def normalize_client_command(line):
         return None
 
     upper = raw.upper()
+    if upper.startswith("SET CLIENT_TIME ") or upper.startswith("SET UTC_OFFSET "):
+        return None
     if (
         upper.startswith("GET ")
         or upper.startswith("SET ")
@@ -850,39 +851,7 @@ async def uart_startup_sync(uart):
 
 
 utc_offset_s = 0
-
-def _fetch_utc_offset():
-    """Fetch UTC offset in seconds from ip-api.com using a raw socket."""
-    global utc_offset_s
-    try:
-        host = "ip-api.com"
-        path = "/json?fields=offset"
-        addr = socket.getaddrinfo(host, 80)[0][-1]
-        s = socket.socket()
-        s.settimeout(10)
-        s.connect(addr)
-        s.send(("GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host)).encode())
-        response = b""
-        while True:
-            chunk = s.recv(256)
-            if not chunk:
-                break
-            response += chunk
-        s.close()
-        body = response.split(b"\r\n\r\n", 1)[-1].decode()
-        # body is like {"offset":-18000}
-        idx = body.find('"offset"')
-        if idx >= 0:
-            colon = body.index(':', idx)
-            end = len(body)
-            for ch in ('}', ','):
-                pos = body.find(ch, colon)
-                if pos >= 0 and pos < end:
-                    end = pos
-            utc_offset_s = int(body[colon + 1:end].strip())
-            log("UTC offset from ip-api.com:", utc_offset_s, "s")
-    except Exception as exc:
-        log("Failed to fetch UTC offset:", exc)
+client_time_set = False
 
 def _format_time_str():
     t = time.localtime(time.time() + utc_offset_s)
@@ -892,44 +861,16 @@ def _format_time_str():
     return "%d:%02d %s" % (h12, m, ampm)
 
 
-async def ntp_time_task(uart):
-    # Initial NTP sync with retries
-    synced = False
-    for attempt in range(5):
-        try:
-            ntptime.settime()
-            synced = True
-            log("NTP sync OK")
-            break
-        except Exception as exc:
-            log("NTP sync attempt", attempt + 1, "failed:", exc)
-            await asyncio.sleep(10)
-    if not synced:
-        log("NTP sync failed; time display unavailable")
-        return
-
-    # Fetch timezone offset directly so first SET TIME uses local time
-    _fetch_utc_offset()
-
-    # Send immediately so the amp has a reading right away
-    uart_send(uart, "SET TIME " + _format_time_str())
-
-    # Poll the RTC every 500ms; send exactly when seconds rolls to 0.
+async def time_tick_task(uart):
+    while not client_time_set:
+        await asyncio.sleep_ms(500)
     last_minute = time.localtime()[4]
-    last_ntp_s = time.time()
     while True:
         await asyncio.sleep_ms(500)
         t = time.localtime()
         if t[5] == 0 and t[4] != last_minute:
             uart_send(uart, "SET TIME " + _format_time_str())
             last_minute = t[4]
-        if time.time() - last_ntp_s >= 3600:
-            try:
-                ntptime.settime()
-                log("NTP re-sync OK")
-            except Exception as exc:
-                log("NTP re-sync failed:", exc)
-            last_ntp_s = time.time()
 
 
 async def amp_watchdog_task(uart):
@@ -943,6 +884,10 @@ async def amp_watchdog_task(uart):
             amp_connected = is_connected
             await broadcast("AMP_STATUS %d" % (1 if amp_connected else 0))
             log("Amp", "connected" if amp_connected else "disconnected")
+            if amp_connected:
+                uart_send(uart, "GET STATE")
+                uart_send(uart, "GET SELECTOR_LABELS")
+                uart_send(uart, "GET PREAMP_SW_VERSION")
         uart_send(uart, "GET STATE")
         await asyncio.sleep(AMP_WATCHDOG_INTERVAL_S)
 
@@ -981,6 +926,18 @@ async def ws_session(ws, uart):
                     log("UTC offset set to", utc_offset_s, "s")
                 except (IndexError, ValueError):
                     pass
+                continue
+            if msg.upper().startswith("SET CLIENT_TIME "):
+                global client_time_set
+                try:
+                    ts = int(msg.split()[2])
+                    t = time.localtime(ts)
+                    machine.RTC().datetime((t[0], t[1], t[2], t[6], t[3], t[4], t[5], 0))
+                    client_time_set = True
+                    uart_send(uart, "SET TIME " + _format_time_str())
+                    log("Time set from client:", _format_time_str())
+                except Exception as exc:
+                    log("SET CLIENT_TIME error:", exc)
                 continue
             cmd = normalize_client_command(msg)
             if cmd:
@@ -1498,8 +1455,7 @@ async def main():
     asyncio.create_task(uart_reader_task(uart))
     asyncio.create_task(uart_startup_sync(uart))
     asyncio.create_task(amp_watchdog_task(uart))
-    if sta_connected:
-        asyncio.create_task(ntp_time_task(uart))
+    asyncio.create_task(time_tick_task(uart))
 
 
     gc.collect()

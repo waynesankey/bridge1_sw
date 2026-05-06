@@ -21,6 +21,7 @@ const themeToggleEl = document.getElementById("themeToggle");
 
 let clockTimezone = null;
 let clockTimer = null;
+let clientTimeSyncTimer = null;
 
 let ws = null;
 let reconnectTimer = null;
@@ -655,6 +656,11 @@ function connectWebSocket() {
     flushQueuedLines();
     requestFullSync(0);
     sendLine("SET UTC_OFFSET " + (-new Date().getTimezoneOffset() * 60));
+    sendLine("SET CLIENT_TIME " + Math.floor(Date.now() / 1000));
+    if (clientTimeSyncTimer) clearInterval(clientTimeSyncTimer);
+    clientTimeSyncTimer = setInterval(() => {
+      sendLine("SET CLIENT_TIME " + Math.floor(Date.now() / 1000));
+    }, 3600000);
   });
 
   socket.addEventListener("message", (event) => {
@@ -683,6 +689,7 @@ function connectWebSocket() {
     ws = null;
     setStatus("WiFi Disconnected", false);
     stopWsHealthTimer();
+    if (clientTimeSyncTimer) { clearInterval(clientTimeSyncTimer); clientTimeSyncTimer = null; }
 
     const code = Number((event && event.code) || 0);
     const intentional = suspendCloseInProgress || !isPageVisible();
